@@ -47,7 +47,9 @@ func (n *NodeState) handleRouteHealthcheckUpdate(route *Route, response *etcd.Re
 		if route.CheckRunning {
 			route.StopCheck <- true
 		}
-		go n.runCheck(route)
+		if n.AdminUp {
+			go n.runCheck(route)
+		}
 
 		route.HealthcheckIndex = response.Node.ModifiedIndex
 		n.UpdateRoute(route)
