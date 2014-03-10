@@ -16,25 +16,39 @@ type Route struct {
 	HealthcheckIndex uint64
 	ConfigIndex      uint64
 	CheckPassing     bool
+	StopCheck        chan bool
+	CheckRunning     bool
 }
 
-func (n *NodeState) handleRouteConfigUpdate(name string, response *etcd.Response) {
+func (n *NodeState) GetRoute(name string) (*Route) {
+	route, found := n.Routes[name]
+	if !found {
+		route = *new(Route)
+		route.Name = name
+		route.StopCheck = make(chan bool)
+		route.CheckRunning = false
+		route.HealthcheckIndex = 0
+	}
+	n.Logger.Println(route)
+	return &route
+}
+
+func (n *NodeState) handleRouteConfigUpdate(route *Route, response *etcd.Response) {
 	// TODO: update configs, use index
-	route := n.Routes[name]
-	if route.ConfigIndex != response.EtcdIndex {
-		n.Logger.Println("New healthcheck!", response.EtcdIndex)
+	if route.ConfigIndex != response.Node.ModifiedIndex {
+		n.Logger.Println("New healthcheck!", response.Node.ModifiedIndex)
 		n.Logger.Println(response.Node.Value)
-		route.ConfigIndex = response.EtcdIndex
-		n.Routes[name] = route
+		route.ConfigIndex = response.Node.ModifiedIndex
 	}
 }
 
 func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bool) []string {
 	// the subscribedRoutes key is a space separated list of route names to watch
 	routes := strings.Split(response.Node.Value, " ")
-	for _, route := range routes {
+	for _, routeName := range routes {
+		route := n.GetRoute(routeName)
 		// Grab config and healthcheck keys before we start the goroutine
-		baseKey := "/bgp/routes/" + route
+		baseKey := "/bgp/routes/" + route.Name
 		healthcheckKey := baseKey + "/healthcheck"
 		configKey := baseKey + "/config"
 

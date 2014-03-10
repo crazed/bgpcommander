@@ -33,18 +33,18 @@ func (n *NodeState) WatchAdminKey() {
 	_, err = n.etcd.Watch(n.keyPrefix+"/adminState", 0, false, updates, nil)
 }
 
-func (n *NodeState) WatchRoute(name string, stop chan bool) {
+func (n *NodeState) WatchRoute(route *Route, stop chan bool) {
 	updates := make(chan *etcd.Response)
-	key := "/bgp/routes/" + name
+	key := "/bgp/routes/" + route.Name
 	go func(updates chan *etcd.Response) {
-		for route := range updates {
-			switch route.Node.Key {
+		for update := range updates {
+			switch update.Node.Key {
 			case key + "/healthcheck":
-				n.handleRouteHealthcheckUpdate(name, route)
+				n.handleRouteHealthcheckUpdate(route, update)
 			case key + "/config":
-				n.handleRouteConfigUpdate(name, route)
+				n.handleRouteConfigUpdate(route, update)
 			default:
-				n.Logger.Println("Unknown key:", route.Node.Key)
+				n.Logger.Println("Unknown key:", update.Node.Key)
 			}
 		}
 	}(updates)
