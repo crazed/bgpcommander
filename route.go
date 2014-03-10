@@ -30,7 +30,6 @@ func (n *NodeState) GetRoute(name string) *Route {
 		route.CheckRunning = false
 		route.HealthcheckIndex = 0
 	}
-	n.Logger.Println(route)
 	n.Routes[name] = route
 	return &route
 }
@@ -79,8 +78,6 @@ func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bo
 }
 
 func (n *NodeState) WithdrawAllRoutes() {
-	n.Logger.Println("WithdrawAll")
-	n.Logger.Println(n.Routes)
 	for key := range n.Routes {
 		n.Logger.Println(key)
 		route := n.GetRoute(key)
