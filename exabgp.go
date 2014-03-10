@@ -6,7 +6,7 @@ import (
 )
 
 func (n *NodeState) WithdrawRoute(name string) {
-	route = n.Routes[name]
+	route := n.Routes[name]
 	fmt.Println("Removing:", route)
 	// TODO: write withdraw command to STDOUT
 }
