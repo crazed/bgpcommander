@@ -6,12 +6,10 @@ import (
 )
 
 func (n *NodeState) WithdrawRoute(route *Route) {
-	n.Logger.Println("Removing:", route)
 	fmt.Println("withdraw", route.Config)
 }
 
 func (n *NodeState) AnnounceRoute(route *Route) {
-	n.Logger.Println("Announcing:", route)
 	fmt.Println("announce", route.Config)
 }
 

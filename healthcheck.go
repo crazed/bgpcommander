@@ -73,7 +73,7 @@ func (n *NodeState) StartAllChecks() {
 	for key := range n.Routes {
 		route := n.GetRoute(key)
 		if !route.CheckRunning {
-			n.runCheck(route)
+			go n.runCheck(route)
 		}
 	}
 }
