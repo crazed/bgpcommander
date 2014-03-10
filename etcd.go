@@ -34,14 +34,43 @@ func (n *NodeState) WatchAdminKey() {
 	_, err = n.etcd.Watch(n.keyPrefix+"/adminState", 0, false, updates, nil)
 }
 
+func (n *NodeState) handleRouteHealthcheckUpdate(name string, response *etcd.Response) {
+	// TODO: update healthchecks, use index
+	route := n.Routes[name]
+	if route.HealthcheckIndex != response.EtcdIndex {
+		fmt.Println("New healthcheck!", response.EtcdIndex)
+		fmt.Println(response.Node.Value)
+		route.HealthcheckIndex = response.EtcdIndex
+		n.Routes[name] = route
+	}
+}
+
+func (n *NodeState) handleRouteConfigUpdate(name string, response *etcd.Response) {
+	// TODO: update configs, use index
+	route := n.Routes[name]
+	if route.ConfigIndex != response.EtcdIndex {
+		fmt.Println("New healthcheck!", response.EtcdIndex)
+		fmt.Println(response.Node.Value)
+		route.ConfigIndex = response.EtcdIndex
+		n.Routes[name] = route
+	}
+}
+
 func (n *NodeState) WatchRoute(name string, stop chan bool) {
 	updates := make(chan *etcd.Response)
+	key := "/bgp/routes/" + name
 	go func(updates chan *etcd.Response) {
 		for route := range updates {
-			fmt.Println(route.Node.Key, route.Node.Value)
+			switch route.Node.Key {
+			case key + "/healthcheck":
+				n.handleRouteHealthcheckUpdate(name, route)
+			case key + "/config":
+				n.handleRouteConfigUpdate(name, route)
+			default:
+				fmt.Println("Unknown key:", route.Node.Key)
+			}
 		}
 	}(updates)
-	key := "/bgp/routes/" + name
 	fmt.Println("Starting to watch:", key)
 	n.etcd.Watch(key, 0, true, updates, stop)
 	fmt.Println("Stop watching:", key)

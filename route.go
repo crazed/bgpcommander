@@ -6,13 +6,15 @@ import (
 )
 
 type Route struct {
-	Name        string
-	AdminUp     bool
-	Prefix      string
-	Communities []string
-	LocalPref   int
-	MED         int
-	Healthcheck string
+	Name             string
+	AdminUp          bool
+	Prefix           string
+	Communities      []string
+	LocalPref        int
+	MED              int
+	Healthcheck      string
+	HealthcheckIndex uint64
+	ConfigIndex      uint64
 }
 
 func (n *NodeState) WatchRouteUpdates(watch chan *etcd.Response) {
