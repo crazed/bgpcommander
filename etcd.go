@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/coreos/go-etcd/etcd"
-	"strings"
 )
 
 func (n *NodeState) WatchAdminKey() {
@@ -34,28 +33,6 @@ func (n *NodeState) WatchAdminKey() {
 	_, err = n.etcd.Watch(n.keyPrefix+"/adminState", 0, false, updates, nil)
 }
 
-func (n *NodeState) handleRouteHealthcheckUpdate(name string, response *etcd.Response) {
-	// TODO: update healthchecks, use index
-	route := n.Routes[name]
-	if route.HealthcheckIndex != response.EtcdIndex {
-		n.Logger.Println("New healthcheck!", response.EtcdIndex)
-		n.Logger.Println(response.Node.Value)
-		route.HealthcheckIndex = response.EtcdIndex
-		n.Routes[name] = route
-	}
-}
-
-func (n *NodeState) handleRouteConfigUpdate(name string, response *etcd.Response) {
-	// TODO: update configs, use index
-	route := n.Routes[name]
-	if route.ConfigIndex != response.EtcdIndex {
-		n.Logger.Println("New healthcheck!", response.EtcdIndex)
-		n.Logger.Println(response.Node.Value)
-		route.ConfigIndex = response.EtcdIndex
-		n.Routes[name] = route
-	}
-}
-
 func (n *NodeState) WatchRoute(name string, stop chan bool) {
 	updates := make(chan *etcd.Response)
 	key := "/bgp/routes/" + name
@@ -74,15 +51,6 @@ func (n *NodeState) WatchRoute(name string, stop chan bool) {
 	n.Logger.Println("Starting to watch:", key)
 	n.etcd.Watch(key, 0, true, updates, stop)
 	n.Logger.Println("Stop watching:", key)
-}
-
-func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bool) []string {
-	// the subscribedRoutes key is a space separated list of route names to watch
-	routes := strings.Split(response.Node.Value, " ")
-	for _, route := range routes {
-		go n.WatchRoute(route, stop)
-	}
-	return routes
 }
 
 func (n *NodeState) WatchSubscribedRoutes() {
