@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/coreos/go-etcd/etcd"
+	"log"
+	"os"
 )
 
 type NodeState struct {
@@ -11,6 +13,7 @@ type NodeState struct {
 	RoutesKey    string
 	NeighborsKey string
 	AdminUp      bool
+	Logger       *log.Logger
 
 	etcd      *etcd.Client
 	keyPrefix string
@@ -25,6 +28,9 @@ func NewNodeState(hostname string, etcd *etcd.Client, deleteExisting bool) *Node
 	state.RoutesKey = fmt.Sprintf("%s/%s", state.keyPrefix, "routes")
 	state.NeighborsKey = fmt.Sprintf("%s/%s", state.keyPrefix, "neighbors")
 	state.AdminUp = true
+
+	log := log.New(os.Stderr, "[bgpcommander] ", log.LstdFlags)
+	state.Logger = log
 
 	if deleteExisting {
 		state.etcd.Delete(state.keyPrefix+"/neighbors", true)

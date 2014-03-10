@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/coreos/go-etcd/etcd"
 )
 
@@ -19,6 +18,6 @@ type Route struct {
 
 func (n *NodeState) WatchRouteUpdates(watch chan *etcd.Response) {
 	for response := range watch {
-		fmt.Println(response.Node.Key, response.Node.Value)
+		n.Logger.Println(response.Node.Key, response.Node.Value)
 	}
 }

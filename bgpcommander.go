@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/coreos/go-etcd/etcd"
 	"os"
 )
@@ -28,10 +27,10 @@ func main() {
 	go state.WatchRouteUpdates(routeUpdates)
 	go readStdin(state)
 
-	fmt.Println("Watching:", state.RoutesKey)
+	state.Logger.Println("Watching:", state.RoutesKey)
 	_, err := client.Watch(state.RoutesKey, 0, true, routeUpdates, stopWatches)
 
 	if err != nil {
-		fmt.Println(err)
+		state.Logger.Println(err)
 	}
 }

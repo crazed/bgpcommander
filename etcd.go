@@ -9,7 +9,7 @@ import (
 func (n *NodeState) WatchAdminKey() {
 	adminState, err := n.GetRelativeKey("adminState", false, false)
 	if err != nil {
-		fmt.Println("No adminState exists, setting to up")
+		n.Logger.Println("No adminState exists, setting to up")
 		n.SetRelativeKey("adminState", "up")
 	} else {
 		if adminState.Node.Value == "up" {
@@ -22,7 +22,7 @@ func (n *NodeState) WatchAdminKey() {
 	updates := make(chan *etcd.Response)
 	go func(updates chan *etcd.Response) {
 		for adminState := range updates {
-			fmt.Println("Changing adminstate!")
+			n.Logger.Println("Changing adminstate!")
 			if adminState.Node.Value == "up" {
 				n.AdminUp = true
 			} else {
@@ -38,8 +38,8 @@ func (n *NodeState) handleRouteHealthcheckUpdate(name string, response *etcd.Res
 	// TODO: update healthchecks, use index
 	route := n.Routes[name]
 	if route.HealthcheckIndex != response.EtcdIndex {
-		fmt.Println("New healthcheck!", response.EtcdIndex)
-		fmt.Println(response.Node.Value)
+		n.Logger.Println("New healthcheck!", response.EtcdIndex)
+		n.Logger.Println(response.Node.Value)
 		route.HealthcheckIndex = response.EtcdIndex
 		n.Routes[name] = route
 	}
@@ -49,8 +49,8 @@ func (n *NodeState) handleRouteConfigUpdate(name string, response *etcd.Response
 	// TODO: update configs, use index
 	route := n.Routes[name]
 	if route.ConfigIndex != response.EtcdIndex {
-		fmt.Println("New healthcheck!", response.EtcdIndex)
-		fmt.Println(response.Node.Value)
+		n.Logger.Println("New healthcheck!", response.EtcdIndex)
+		n.Logger.Println(response.Node.Value)
 		route.ConfigIndex = response.EtcdIndex
 		n.Routes[name] = route
 	}
@@ -67,13 +67,13 @@ func (n *NodeState) WatchRoute(name string, stop chan bool) {
 			case key + "/config":
 				n.handleRouteConfigUpdate(name, route)
 			default:
-				fmt.Println("Unknown key:", route.Node.Key)
+				n.Logger.Println("Unknown key:", route.Node.Key)
 			}
 		}
 	}(updates)
-	fmt.Println("Starting to watch:", key)
+	n.Logger.Println("Starting to watch:", key)
 	n.etcd.Watch(key, 0, true, updates, stop)
-	fmt.Println("Stop watching:", key)
+	n.Logger.Println("Stop watching:", key)
 }
 
 func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bool) []string {
@@ -89,8 +89,13 @@ func (n *NodeState) WatchSubscribedRoutes() {
 	updates := make(chan *etcd.Response)
 	stop := make(chan bool)
 
-	response, _ := n.etcd.Get(n.keyPrefix+"/subscribedRoutes", false, false)
-	lastRoutes := n.handleSubscribedRoutes(response, stop)
+	var lastRoutes []string
+	response, err := n.etcd.Get(n.keyPrefix+"/subscribedRoutes", false, false)
+	if err != nil {
+		n.Logger.Println("Could not get subscribedRoutes:", err)
+	} else {
+		lastRoutes = n.handleSubscribedRoutes(response, stop)
+	}
 
 	go func(updates chan *etcd.Response, stop chan bool, lastRoutes []string) {
 		for subscribedRoutes := range updates {
@@ -127,7 +132,7 @@ func (n *NodeState) WatchKeys() {
 	// updates to each route. On top of that we start watching for node level changes.
 	_, err := n.etcd.Get(n.keyPrefix, false, false)
 	if err != nil {
-		fmt.Println("Creating base node:", n.keyPrefix)
+		n.Logger.Println("Creating base node:", n.keyPrefix)
 		n.etcd.CreateDir(n.keyPrefix, 0)
 	}
 

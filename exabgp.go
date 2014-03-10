@@ -2,23 +2,22 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 func (n *NodeState) WithdrawRoute(name string) {
 	route := n.Routes[name]
-	fmt.Println("Removing:", route)
+	n.Logger.Println("Removing:", route)
 	// TODO: write withdraw command to STDOUT
 }
 
 func (n *NodeState) ProcessExaBGPOutput(buf []byte) {
 	s := string(buf[:])
-	fmt.Println("ExaBGP Sent:", s)
+	n.Logger.Println("ExaBGP Sent:", s)
 
 	var f interface{}
 	err := json.Unmarshal(buf, &f)
 	if err != nil {
-		fmt.Println(err)
+		n.Logger.Println(err)
 		return
 	}
 
