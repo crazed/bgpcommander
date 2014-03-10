@@ -15,6 +15,7 @@ type Route struct {
 	Healthcheck      string
 	HealthcheckIndex uint64
 	ConfigIndex      uint64
+	Config           string
 	CheckPassing     bool
 	StopCheck        chan bool
 	CheckRunning     bool
@@ -30,15 +31,20 @@ func (n *NodeState) GetRoute(name string) (*Route) {
 		route.HealthcheckIndex = 0
 	}
 	n.Logger.Println(route)
+	n.Routes[name] = route
 	return &route
 }
 
+func (n *NodeState) UpdateRoute(route *Route) {
+	n.Routes[route.Name] = *route
+}
+
 func (n *NodeState) handleRouteConfigUpdate(route *Route, response *etcd.Response) {
-	// TODO: update configs, use index
 	if route.ConfigIndex != response.Node.ModifiedIndex {
-		n.Logger.Println("New healthcheck!", response.Node.ModifiedIndex)
-		n.Logger.Println(response.Node.Value)
+		n.Logger.Println("New config!", response.Node.ModifiedIndex)
+		route.Config = response.Node.Value
 		route.ConfigIndex = response.Node.ModifiedIndex
+		n.UpdateRoute(route)
 	}
 }
 
@@ -70,4 +76,14 @@ func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bo
 		go n.WatchRoute(route, stop)
 	}
 	return routes
+}
+
+func (n *NodeState) WithdrawAllRoutes() {
+	n.Logger.Println("WithdrawAll")
+	n.Logger.Println(n.Routes)
+	for key := range n.Routes {
+		n.Logger.Println(key)
+		route := n.GetRoute(key)
+		n.WithdrawRoute(route)
+	}
 }

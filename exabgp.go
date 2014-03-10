@@ -2,12 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
-func (n *NodeState) WithdrawRoute(name string) {
-	route := n.Routes[name]
+func (n *NodeState) WithdrawRoute(route *Route) {
 	n.Logger.Println("Removing:", route)
-	// TODO: write withdraw command to STDOUT
+	fmt.Println("withdraw", route.Config)
+}
+
+func (n *NodeState) AnnounceRoute(route *Route) {
+	n.Logger.Println("Announcing:", route)
+	fmt.Println("announce", route.Config)
 }
 
 func (n *NodeState) ProcessExaBGPOutput(buf []byte) {

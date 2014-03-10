@@ -24,8 +24,11 @@ func (n *NodeState) WatchAdminKey() {
 			n.Logger.Println("Changing adminstate!")
 			if adminState.Node.Value == "up" {
 				n.AdminUp = true
+				n.StartAllChecks()
 			} else {
 				n.AdminUp = false
+				n.WithdrawAllRoutes()
+				n.StopAllChecks()
 			}
 		}
 	}(updates)
@@ -84,8 +87,8 @@ func (n *NodeState) WatchSubscribedRoutes() {
 					}
 				}
 				if !lastInNew {
+					n.WithdrawRoute(n.GetRoute(a))
 					delete(n.Routes, a)
-					n.WithdrawRoute(a)
 				}
 			}
 			lastRoutes = newRoutes
