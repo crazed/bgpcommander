@@ -21,7 +21,7 @@ type Route struct {
 	CheckRunning     bool
 }
 
-func (n *NodeState) GetRoute(name string) (*Route) {
+func (n *NodeState) GetRoute(name string) *Route {
 	route, found := n.Routes[name]
 	if !found {
 		route = *new(Route)
