@@ -13,6 +13,8 @@ The point of this is to integrate with [ExaBGP](https://github.com/Exa-Networks/
 When running in conjuction with ExaBGP, a process configuration like this is inserted:
 
         process bgpcommander {
+          encoder json;
+          neighbor-changes;
           run /path/to/bgpcommander;
         }
 
