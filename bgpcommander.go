@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"github.com/coreos/go-etcd/etcd"
 	"os"
+	"strings"
 )
 
 func readStdin(state *NodeState) {
@@ -13,13 +15,35 @@ func readStdin(state *NodeState) {
 	}
 }
 
+type machines []string
+
+func (m *machines) String() string {
+	return strings.Join(*m, ", ")
+}
+
+func (m *machines) Set(value string) error {
+	for _, machine := range strings.Split(value, ",") {
+		*m = append(*m, strings.TrimSpace(machine))
+	}
+	return nil
+}
+
 func main() {
-	machines := []string{"http://127.0.0.1:4001"}
-	client := etcd.NewClient(machines)
+	cluster := machines{"http://127.0.0.1:4001"}
+	healthcheckScriptPath := "/tmp"
 	hostname, _ := os.Hostname()
 
-	healthcheckScriptPath := "/tmp"
+	flag.Var(&cluster, "c", "Comma separated list of etcd cluster members")
+	flag.StringVar(&healthcheckScriptPath, "p", healthcheckScriptPath, "Path to store healthcheck scripts")
+	flag.StringVar(&hostname, "n", hostname, "Override node's name")
+	flag.Parse()
+
+	client := etcd.NewClient(cluster)
+
 	state := NewNodeState(hostname, client, true, healthcheckScriptPath)
+	state.Logger.Println("Using etcd servers:", cluster.String())
+	state.Logger.Println("Using node name:", hostname)
+	state.Logger.Println("Using healthcheck script path:", healthcheckScriptPath)
 
 	go readStdin(state)
 	state.WatchKeys()
