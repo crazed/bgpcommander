@@ -31,9 +31,10 @@ All routes exist in the `/bgp/routes` directory and can be created with a couple
         # This key is what is downloaded and ran as a healthcheck for the route.
         # As long as the script returns 0, the healthcheck is considered passing. If anything
         # else is returned, a withdraw command is used to remove the route.
-        $ cat < EOF > mytest.sh
+        $ cat << EOF > mytest.sh
         #!/bin/sh
         dig @172.16.1.5 google.com
+        EOF
         $ curl localhost:4001/v2/keys/bgp/routes/CUSTOM_ROUTE/healthcheck -XPUT \
             --data-urlencode value@mytest.sh
 
