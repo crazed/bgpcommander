@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/coreos/go-etcd/etcd"
+	"net/http"
+	"time"
 )
 
 func (n *NodeState) WithdrawRoute(route *Route) {
@@ -34,4 +37,10 @@ func (n *NodeState) ProcessExaBGPOutput(buf []byte) {
 			n.SetNeighbor(ip, state)
 		}
 	}
+}
+
+func (n *NodeState) HandleEtcdFailure(cluster *etcd.Cluster, reqs []http.Request, resps []http.Response, err error) error {
+	n.Logger.Println("ERROR: Lost connection to etcd! Waiting 5 seconds...")
+	time.Sleep(5000 * time.Millisecond)
+	return nil
 }

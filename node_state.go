@@ -30,6 +30,9 @@ func NewNodeState(hostname string, etcd *etcd.Client, deleteExisting bool, healt
 	state.NeighborsKey = fmt.Sprintf("%s/%s", state.keyPrefix, "neighbors")
 	state.AdminUp = true
 
+	// Make sure we gracefully handle failures
+	etcd.CheckRetry = state.HandleEtcdFailure
+
 	log := log.New(os.Stderr, "[bgpcommander] ", log.LstdFlags)
 	state.Logger = log
 
