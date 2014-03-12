@@ -9,10 +9,12 @@ import (
 )
 
 func (n *NodeState) WithdrawRoute(route *Route) {
+	n.SetRelativeKey("/routes/"+route.Name+"/state", "withdraw")
 	fmt.Println("withdraw", route.Config)
 }
 
 func (n *NodeState) AnnounceRoute(route *Route) {
+	n.SetRelativeKey("/routes/"+route.Name+"/state", "announce")
 	fmt.Println("announce", route.Config)
 }
 
