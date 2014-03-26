@@ -46,6 +46,8 @@ func (n *NodeState) WatchRoute(route *Route, stop chan bool) {
 				n.handleRouteHealthcheckUpdate(route, update)
 			case key + "/config":
 				n.handleRouteConfigUpdate(route, update)
+			case key + "/prefix":
+				n.handleRoutePrefixUpdate(route, update)
 			default:
 				n.Logger.Println("Unknown key:", update.Node.Key)
 			}

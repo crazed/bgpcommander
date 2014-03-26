@@ -8,10 +8,8 @@ import (
 type Route struct {
 	Name             string
 	AdminUp          bool
+	PrefixIndex      uint64
 	Prefix           string
-	Communities      []string
-	LocalPref        int
-	MED              int
 	Healthcheck      string
 	HealthcheckIndex uint64
 	ConfigIndex      uint64
@@ -38,6 +36,14 @@ func (n *NodeState) UpdateRoute(route *Route) {
 	n.Routes[route.Name] = *route
 }
 
+func (n *NodeState) handleRoutePrefixUpdate(route *Route, response *etcd.Response) {
+	if route.PrefixIndex != response.Node.ModifiedIndex {
+		route.Prefix = response.Node.Value
+		route.PrefixIndex = response.Node.ModifiedIndex
+		n.UpdateRoute(route)
+	}
+}
+
 func (n *NodeState) handleRouteConfigUpdate(route *Route, response *etcd.Response) {
 	if route.ConfigIndex != response.Node.ModifiedIndex {
 		n.Logger.Println("New config!", response.Node.ModifiedIndex)
@@ -52,10 +58,11 @@ func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bo
 	routes := strings.Split(response.Node.Value, " ")
 	for _, routeName := range routes {
 		route := n.GetRoute(routeName)
-		// Grab config and healthcheck keys before we start the goroutine
+		// Grab config, healthcheck, and prefix keys before we start the goroutine
 		baseKey := "/bgp/routes/" + route.Name
 		healthcheckKey := baseKey + "/healthcheck"
 		configKey := baseKey + "/config"
+		prefixKey := baseKey + "/prefix"
 
 		response, err := n.etcd.Get(healthcheckKey, false, false)
 		if err != nil {
@@ -69,6 +76,13 @@ func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bo
 			n.Logger.Println("Could not get config from", configKey)
 		} else {
 			n.handleRouteConfigUpdate(route, response)
+		}
+
+		response, err = n.etcd.Get(prefixKey, false, false)
+		if err != nil {
+			n.Logger.Println("Could not get prefix from", prefixKey)
+		} else {
+			n.handleRoutePrefixUpdate(route, response)
 		}
 
 		// Watch these keys

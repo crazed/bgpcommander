@@ -10,12 +10,12 @@ import (
 
 func (n *NodeState) WithdrawRoute(route *Route) {
 	n.SetRelativeKey("/routes/"+route.Name+"/state", "withdraw")
-	fmt.Println("withdraw", route.Config)
+	fmt.Printf("withdraw route %s %s\n", route.Prefix, route.Config)
 }
 
 func (n *NodeState) AnnounceRoute(route *Route) {
 	n.SetRelativeKey("/routes/"+route.Name+"/state", "announce")
-	fmt.Println("announce", route.Config)
+	fmt.Printf("announce route %s %s\n", route.Prefix, route.Config)
 }
 
 func (n *NodeState) ProcessExaBGPOutput(buf []byte) {
