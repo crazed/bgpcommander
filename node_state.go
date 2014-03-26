@@ -44,7 +44,13 @@ func NewNodeState(hostname string, etcd *etcd.Client, deleteExisting bool, healt
 
 	if deleteExisting {
 		state.etcd.Delete(state.keyPrefix+"/neighbors", true)
+		state.etcd.Delete(state.keyPrefix+"/routes", true)
 	}
 
 	return state
+}
+
+func (n *NodeState) Shutdown() {
+	n.Logger.Println("Shutting down!")
+	n.RemoveState()
 }

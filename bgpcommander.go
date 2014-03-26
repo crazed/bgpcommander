@@ -5,7 +5,9 @@ import (
 	"flag"
 	"github.com/coreos/go-etcd/etcd"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
 func readStdin(state *NodeState) {
@@ -13,6 +15,12 @@ func readStdin(state *NodeState) {
 	for scanner.Scan() {
 		state.ProcessExaBGPOutput(scanner.Bytes())
 	}
+}
+
+func handleSignal(signals chan os.Signal, state *NodeState) {
+	<-signals
+	state.Shutdown()
+	os.Exit(0)
 }
 
 type machines []string
@@ -45,7 +53,10 @@ func main() {
 	state.Logger.Println("Using node name:", hostname)
 	state.Logger.Println("Using healthcheck script path:", healthcheckScriptPath)
 
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
 	go readStdin(state)
+	go handleSignal(signals, state)
 	state.WatchKeys()
 
 	// goroutines are doing the work, so block here

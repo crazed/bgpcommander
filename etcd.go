@@ -122,3 +122,10 @@ func (n *NodeState) GetRelativeKey(key string, sort, recursive bool) (*etcd.Resp
 	fullKey := fmt.Sprintf("%s/%s", n.keyPrefix, key)
 	return n.etcd.Get(fullKey, sort, recursive)
 }
+
+func (n *NodeState) RemoveState() {
+	for _, route := range n.Routes {
+		n.SetRelativeKey("/routes/"+route.Name+"/state", "down")
+	}
+	n.etcd.Delete(n.keyPrefix+"/neighbors", true)
+}
