@@ -50,6 +50,10 @@ func (n *NodeState) handleRouteConfigUpdate(route *Route, response *etcd.Respons
 		route.Config = response.Node.Value
 		route.ConfigIndex = response.Node.ModifiedIndex
 		n.UpdateRoute(route)
+		// Announce the route again if we're good to handle any config changes
+		if route.CheckPassing && n.AdminUp {
+			n.AnnounceRoute(route)
+		}
 	}
 }
 
