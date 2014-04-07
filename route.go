@@ -41,6 +41,10 @@ func (n *NodeState) handleRoutePrefixUpdate(route *Route, response *etcd.Respons
 		route.Prefix = response.Node.Value
 		route.PrefixIndex = response.Node.ModifiedIndex
 		n.UpdateRoute(route)
+		// Announce the route again if we change prefixes
+		if route.CheckPassing && n.AdminUp {
+			n.AnnounceRoute(route)
+		}
 	}
 }
 
