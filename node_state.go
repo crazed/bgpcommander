@@ -54,6 +54,10 @@ func (n *NodeState) GetKeyPrefix() string {
 	return n.keyPrefix
 }
 
+func (n *NodeState) GetHealthcheckScriptPath() string {
+	return n.healthcheckScriptPath
+}
+
 func (n *NodeState) Shutdown() {
 	n.Logger.Println("Shutting down!")
 	n.RemoveState()
