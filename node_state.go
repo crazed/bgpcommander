@@ -14,10 +14,12 @@ type NodeState struct {
 	NeighborsKey string
 	AdminUp      bool
 	Logger       *log.Logger
+	EventHandler func(event *Event)
 
 	etcd                  *etcd.Client
 	keyPrefix             string
 	healthcheckScriptPath string
+	events                chan *Event
 }
 
 func NewNodeState(hostname string, etcd *etcd.Client, deleteExisting bool, healthcheckScriptPath string) *NodeState {
@@ -29,12 +31,23 @@ func NewNodeState(hostname string, etcd *etcd.Client, deleteExisting bool, healt
 	state.RoutesKey = fmt.Sprintf("%s/%s", state.keyPrefix, "routes")
 	state.NeighborsKey = fmt.Sprintf("%s/%s", state.keyPrefix, "neighbors")
 	state.AdminUp = true
+	state.events = make(chan *Event)
 
 	// Make sure we gracefully handle failures
 	etcd.CheckRetry = state.HandleEtcdFailure
 
 	log := log.New(os.Stderr, "[bgpcommander] ", log.LstdFlags)
 	state.Logger = log
+
+	// Start handling events as they come in
+	go func() {
+		for event := range state.events {
+			state.Logger.Println("["+event.Level+"]", event.Type, "::", event.Description)
+			if state.EventHandler != nil {
+				state.EventHandler(event)
+			}
+		}
+	}()
 
 	state.healthcheckScriptPath = healthcheckScriptPath
 	if err := os.MkdirAll(state.healthcheckScriptPath, 0755); err != nil {
@@ -59,6 +72,6 @@ func (n *NodeState) GetHealthcheckScriptPath() string {
 }
 
 func (n *NodeState) Shutdown() {
-	n.Logger.Println("Shutting down!")
+	n.newEvent("warning", "shutdown", "Shutting down!")
 	n.RemoveState()
 }

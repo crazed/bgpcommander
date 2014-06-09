@@ -40,6 +40,7 @@ func (n *NodeState) handleRoutePrefixUpdate(route *Route, response *etcd.Respons
 	if route.PrefixIndex != response.Node.ModifiedIndex {
 		route.Prefix = response.Node.Value
 		route.PrefixIndex = response.Node.ModifiedIndex
+		n.newEvent("info", "route_prefix_update", "new prefix for "+route.Name+" is "+route.Prefix)
 		n.UpdateRoute(route)
 		// Announce the route again if we change prefixes
 		if route.CheckPassing && n.AdminUp {
@@ -50,9 +51,9 @@ func (n *NodeState) handleRoutePrefixUpdate(route *Route, response *etcd.Respons
 
 func (n *NodeState) handleRouteConfigUpdate(route *Route, response *etcd.Response) {
 	if route.ConfigIndex != response.Node.ModifiedIndex {
-		n.Logger.Println("New config!", response.Node.ModifiedIndex)
 		route.Config = response.Node.Value
 		route.ConfigIndex = response.Node.ModifiedIndex
+		n.newEvent("info", "route_config_update", "new config for "+route.Name+" is '"+route.Config+"'")
 		n.UpdateRoute(route)
 		// Announce the route again if we're good to handle any config changes
 		if route.CheckPassing && n.AdminUp {
@@ -74,21 +75,21 @@ func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bo
 
 		response, err := n.etcd.Get(healthcheckKey, false, false)
 		if err != nil {
-			n.Logger.Println("Could not get healtcheck from", healthcheckKey)
+			n.newEvent("error", "route_healthcheck_error", "Could not get healthcheck from '"+healthcheckKey+"'")
 		} else {
 			n.handleRouteHealthcheckUpdate(route, response)
 		}
 
 		response, err = n.etcd.Get(configKey, false, false)
 		if err != nil {
-			n.Logger.Println("Could not get config from", configKey)
+			n.newEvent("error", "route_config_error", "Could not get config from '"+configKey+"'")
 		} else {
 			n.handleRouteConfigUpdate(route, response)
 		}
 
 		response, err = n.etcd.Get(prefixKey, false, false)
 		if err != nil {
-			n.Logger.Println("Could not get prefix from", prefixKey)
+			n.newEvent("error", "route_prefix_error", "Could not get config from '"+prefixKey+"'")
 		} else {
 			n.handleRoutePrefixUpdate(route, response)
 		}
@@ -96,12 +97,12 @@ func (n *NodeState) handleSubscribedRoutes(response *etcd.Response, stop chan bo
 		// Watch these keys
 		go n.WatchRoute(route, stop)
 	}
+	n.newEvent("info", "route_subscription_update", "new subscribed routes are '"+response.Node.Value+"'")
 	return routes
 }
 
 func (n *NodeState) WithdrawAllRoutes() {
 	for key := range n.Routes {
-		n.Logger.Println(key)
 		route := n.GetRoute(key)
 		n.WithdrawRoute(route)
 	}

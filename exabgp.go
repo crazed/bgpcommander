@@ -20,12 +20,12 @@ func (n *NodeState) AnnounceRoute(route *Route) {
 
 func (n *NodeState) ProcessExaBGPOutput(buf []byte) {
 	s := string(buf[:])
-	n.Logger.Println("ExaBGP Sent:", s)
+	n.newEvent("info", "exabgp_data", s)
 
 	var f interface{}
 	err := json.Unmarshal(buf, &f)
 	if err != nil {
-		n.Logger.Println(err)
+		n.newEvent("error", "exabgp_json_error", "Failed to parse JSON from Exabgp: "+err.Error())
 		return
 	}
 
@@ -42,7 +42,7 @@ func (n *NodeState) ProcessExaBGPOutput(buf []byte) {
 }
 
 func (n *NodeState) HandleEtcdFailure(cluster *etcd.Cluster, reqs []http.Request, resps []http.Response, err error) error {
-	n.Logger.Println("ERROR: Lost connection to etcd! Waiting 5 seconds...")
+	n.newEvent("error", "etcd_connection_failure", "Lost connection to etcd! Waiting 5 seconds...")
 	time.Sleep(5000 * time.Millisecond)
 	return nil
 }

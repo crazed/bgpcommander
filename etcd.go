@@ -8,7 +8,7 @@ import (
 func (n *NodeState) WatchAdminKey() {
 	adminState, err := n.GetRelativeKey("adminState", false, false)
 	if err != nil {
-		n.Logger.Println("No adminState exists, setting to up")
+		n.newEvent("info", "admin_state_change", "No adminState exists, setting to up")
 		n.SetRelativeKey("adminState", "up")
 	} else {
 		if adminState.Node.Value == "up" {
@@ -21,7 +21,7 @@ func (n *NodeState) WatchAdminKey() {
 	updates := make(chan *etcd.Response)
 	go func(updates chan *etcd.Response) {
 		for adminState := range updates {
-			n.Logger.Println("Changing adminstate!")
+			n.newEvent("info", "admin_state_change", "Changing adminState to '"+adminState.Node.Value+"'")
 			if adminState.Node.Value == "up" {
 				n.AdminUp = true
 				n.StartAllChecks()
@@ -49,13 +49,13 @@ func (n *NodeState) WatchRoute(route *Route, stop chan bool) {
 			case key + "/prefix":
 				n.handleRoutePrefixUpdate(route, update)
 			default:
-				n.Logger.Println("Unknown key:", update.Node.Key)
+				n.newEvent("warning", "route_unknown_key", "Unknown key: "+update.Node.Key)
 			}
 		}
 	}(updates)
-	n.Logger.Println("Starting to watch:", key)
+	n.newEvent("info", "add_key_watch", "Starting to watch '"+key+"'")
 	n.etcd.Watch(key, 0, true, updates, stop)
-	n.Logger.Println("Stop watching:", key)
+	n.newEvent("info", "remove_key_watch", "Stoped watching '"+key+"'")
 }
 
 func (n *NodeState) WatchSubscribedRoutes() {
@@ -65,7 +65,7 @@ func (n *NodeState) WatchSubscribedRoutes() {
 	var lastRoutes []string
 	response, err := n.etcd.Get(n.keyPrefix+"/subscribedRoutes", false, false)
 	if err != nil {
-		n.Logger.Println("Could not get subscribedRoutes:", err)
+		n.newEvent("error", "no_subscribed_routes", "Could not get subscribedRoutes")
 	} else {
 		lastRoutes = n.handleSubscribedRoutes(response, stop)
 	}
@@ -105,7 +105,7 @@ func (n *NodeState) WatchKeys() {
 	// updates to each route. On top of that we start watching for node level changes.
 	_, err := n.etcd.Get(n.keyPrefix, false, false)
 	if err != nil {
-		n.Logger.Println("Creating base node:", n.keyPrefix)
+		n.newEvent("info", "create_key", "Creating base etcd node: "+n.keyPrefix)
 		n.etcd.CreateDir(n.keyPrefix, 0)
 	}
 

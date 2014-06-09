@@ -21,7 +21,7 @@ func (n *NodeState) runCheck(route *Route) {
 			script := n.GetFilePathForRouteCheck(route.Name)
 			out, err := exec.Command(script).Output()
 			if err != nil {
-				n.Logger.Println("ERROR: script failed:", script, string(out))
+				n.newEvent("error", "healthcheck_failed", "Failed healthcheck for "+route.Name+", output: "+string(out))
 				if route.CheckPassing != false {
 					route.CheckPassing = false
 					n.WithdrawRoute(route)
@@ -41,7 +41,7 @@ func (n *NodeState) runCheck(route *Route) {
 
 func (n *NodeState) handleRouteHealthcheckUpdate(route *Route, response *etcd.Response) {
 	if route.HealthcheckIndex != response.Node.ModifiedIndex {
-		n.Logger.Println("New healthcheck!", response.Node.ModifiedIndex)
+		n.newEvent("info", "route_healthcheck_update", "new healthcheck for '"+route.Name+"'")
 		n.createHealthcheckScript(route.Name, response.Node.Value)
 
 		if route.CheckRunning {
@@ -64,7 +64,7 @@ func (n *NodeState) createHealthcheckScript(name string, scriptContent string) {
 	filePath := n.GetFilePathForRouteCheck(name)
 	err := ioutil.WriteFile(filePath, []byte(scriptContent), 0755)
 	if err != nil {
-		n.Logger.Println("ERROR: failed to write healthcheck", filePath, err)
+		n.newEvent("error", "healthcheck_error", "Failed to write healthcheck to '"+filePath+"'")
 		route := n.Routes[name]
 		route.CheckPassing = false
 		n.Routes[name] = route
