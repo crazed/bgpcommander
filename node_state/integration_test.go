@@ -1,4 +1,4 @@
-package main
+package node_state
 
 import "testing"
 import "os"
@@ -14,10 +14,6 @@ func TestRouteUpdates(t *testing.T) {
 	devNull, _ := os.Open(os.DevNull)
 	nullLogger := log.New(devNull, "", log.LstdFlags)
 	state.Logger = nullLogger
-
-	// Make sure we can handle signals safely
-	signals := make(chan os.Signal, 1)
-	go handleSignal(signals, state)
 
 	// Every time there's an event, drop it in a channel
 	eventStream := make(chan *Event)
@@ -52,6 +48,7 @@ func TestRouteUpdates(t *testing.T) {
 		state.Shutdown()
 	}
 	defer cleanUpTest()
+	client.Delete(routeKey, true)
 
 	// Start watching the important keys
 	state.WatchKeys()

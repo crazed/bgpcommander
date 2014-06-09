@@ -1,4 +1,4 @@
-package main
+package node_state
 
 import "testing"
 import "github.com/coreos/go-etcd/etcd"

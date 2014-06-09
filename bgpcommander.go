@@ -4,20 +4,21 @@ import (
 	"bufio"
 	"flag"
 	"github.com/coreos/go-etcd/etcd"
+	"github.com/crazed/bgpcommander/node_state"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 )
 
-func readStdin(state *NodeState) {
+func readStdin(state *node_state.NodeState) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		state.ProcessExaBGPOutput(scanner.Bytes())
 	}
 }
 
-func handleSignal(signals chan os.Signal, state *NodeState) {
+func handleSignal(signals chan os.Signal, state *node_state.NodeState) {
 	<-signals
 	state.Shutdown()
 	os.Exit(0)
@@ -48,7 +49,7 @@ func main() {
 
 	client := etcd.NewClient(cluster)
 
-	state := NewNodeState(hostname, client, true, healthcheckScriptPath)
+	state := node_state.NewNodeState(hostname, client, true, healthcheckScriptPath)
 	state.Logger.Println("Using etcd servers:", cluster.String())
 	state.Logger.Println("Using node name:", hostname)
 	state.Logger.Println("Using healthcheck script path:", healthcheckScriptPath)

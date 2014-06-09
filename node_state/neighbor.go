@@ -1,4 +1,4 @@
-package main
+package node_state
 
 type Neighbor struct {
 	State     string

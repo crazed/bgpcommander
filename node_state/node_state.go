@@ -1,4 +1,4 @@
-package main
+package node_state
 
 import (
 	"fmt"
