@@ -50,6 +50,10 @@ func NewNodeState(hostname string, etcd *etcd.Client, deleteExisting bool, healt
 	return state
 }
 
+func (n *NodeState) GetKeyPrefix() string {
+	return n.keyPrefix
+}
+
 func (n *NodeState) Shutdown() {
 	n.Logger.Println("Shutting down!")
 	n.RemoveState()
